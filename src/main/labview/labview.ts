@@ -6,7 +6,8 @@ import {
   clipboard,
   dialog,
   Menu,
-  MenuItemConstructorOptions
+  MenuItemConstructorOptions,
+  shell
 } from 'electron';
 import log from 'electron-log';
 import * as path from 'path';
@@ -61,6 +62,12 @@ export class LabView implements IDisposable {
         preload: path.join(__dirname, './preload.js'),
         partition
       }
+    });
+
+    // Open external links in system browser
+    this._view.webContents.setWindowOpenHandler(({ url }) => {
+        shell.openExternal(url);
+        return { action: 'deny' };
     });
 
     this._view.setBackgroundColor(
