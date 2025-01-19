@@ -3,10 +3,12 @@
 
 import {
   BrowserView,
+//  BrowserWindow, //debug
   clipboard,
   dialog,
   Menu,
   MenuItemConstructorOptions,
+  BrowserWindowConstructorOptions,
   shell
 } from 'electron';
 import log from 'electron-log';
@@ -30,6 +32,7 @@ import { IDisposable } from '../tokens';
 import { SessionConfig } from '../config/sessionconfig';
 import { EventManager } from '../eventmanager';
 import { EventTypeMain } from '../eventtypes';
+//import { main } from '../main'; // to open new sessions from labview
 
 export type ILoadErrorCallback = (
   errorCode: number,
@@ -49,7 +52,7 @@ export class LabView implements IDisposable {
     using a dedicated partition causes PDF rendering issues (object blob in iframe).
     use temporary dedicated partition only for unpersisted remote connections
     */
-    let partition = undefined;
+    let partition : any = undefined;
     if (sessionConfig.isRemote) {
       if (sessionConfig.persistSessionData) {
         partition = sessionConfig.partition;
@@ -69,21 +72,59 @@ export class LabView implements IDisposable {
       // if Jupyter Lab wants to open a new window, let it open a new window
       const jlab_host = `${sessionConfig.url.protocol}//${sessionConfig.url.host}`
       if (url.startsWith(jlab_host)) {
+        console.log("CREATING WINDOW --------------------");
+
+        // NOTE it would be nice if I can just clone current window and just change its url...
+        //this._view.webContents.loadURL(url);
+
+
+        // const win = new BrowserWindow({ width: 800, height: 600 })
+        // win.loadURL(url)
+        // console.log(win)
+        //;
+        //console.log(main.jupyterApp);
+        //console.log(this._parent.app.createNewEmptySession());
+        // const view = new BrowserView({
+        //   webPreferences: {
+        //     preload: path.join(__dirname, './preload.js'),
+        //     partition
+        //   }
+        // });
+        // console.log(view);
+
+        //const window = new BrowserWindow();
+        //window.show();
         return {
           action: 'allow',
-          createWindow: (options : any) => {
-            //const browserView = new BrowserView(options);
-            const labView = new LabView({
-              isDarkTheme: true, //this._parent.isDarkTheme,
-              parent: this._parent,
-              sessionConfig: this._parent.sessionConfig
-            });
-            this._parent.window.addBrowserView(labView.view);
-            return labView.view.webContents;
-            //this._parent.window.addBrowserView(browserView);
-            //return browserView.webContents;
+          overrideBrowserWindowOptions: {
+            webPreferences: {
+              preload: path.join(__dirname, './preload.js'),
+              partition
+            }
+          },
+          createWindow: (options: BrowserWindowConstructorOptions) => {
+            console.log("createWindow callled"); // doesnt do anything
           }
-        };
+        }
+          // action: 'allow',
+          // outlivesOpener: false,
+          // createWindow: (options: BrowserWindowConstructorOptions) => {
+          //   console.log(options); // FIXME: does this even do anything??
+          // }
+          // createWindow: (options : any) => {
+          //   //const browserView = new BrowserView(options);
+          //   // const labView = new LabView({
+          //   //   isDarkTheme: true, //this._parent.isDarkTheme,
+          //   //   parent: this._parent,
+          //   //   sessionConfig: this._parent.sessionConfig
+          //   // });
+          //   // this._parent.window.addBrowserView(labView.view);
+          //   console.log("CREATING WINDOW ------------------------------")
+          //   return this._parent.window;
+          //   //this._parent.window.addBrowserView(browserView);
+          //   //return browserView.webContents;
+          // }
+        //};
       } else {
         // otherwise open in system browser
         shell.openExternal(url);
@@ -95,6 +136,9 @@ export class LabView implements IDisposable {
     //    This is the same behaviour as the main branch.
     // 2. Opening links in jupyter windows opened from jupyter labs has old behaviour
     // 3. Opening jupyter lab from jupyter notebook creates an undecorated window.
+    // 4. Another edge case is if user opens a notebook that has a link to another jupyter server.
+    //    In this case it would be sensible to open that link in jupyterlab-desktop.
+    //    And possibly ask for password.
 
     this._view.setBackgroundColor(
       options.isDarkTheme ? DarkThemeBGColor : LightThemeBGColor

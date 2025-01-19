@@ -142,6 +142,10 @@ export class SessionWindow implements IDisposable {
     this._createEnvSelectPopup();
   }
 
+  get app(): IApplication {
+    return this._app;
+  }
+
   get window(): BrowserWindow {
     return this._window;
   }
