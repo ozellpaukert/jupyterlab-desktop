@@ -72,9 +72,9 @@ export class LabView implements IDisposable {
         return {
           action: 'allow',
           createWindow: (options : any) => {
-            const browserView = new BrowserView(options)
-            this._parent.window.addBrowserView(browserView)
-            return browserView.webContents
+            const browserView = new BrowserView(options);
+            this._parent.window.addBrowserView(browserView);
+            return browserView.webContents;
           }
         };
       } else {
