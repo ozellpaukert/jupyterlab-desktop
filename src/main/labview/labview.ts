@@ -66,9 +66,28 @@ export class LabView implements IDisposable {
 
     // Open external links in system browser
     this._view.webContents.setWindowOpenHandler(({ url }) => {
+      // if Jupyter Lab wants to open a new window, let it open a new window
+      const jlab_host = `${sessionConfig.url.protocol}//${sessionConfig.url.host}`
+      if (url.startsWith(jlab_host)) {
+        return {
+          action: 'allow',
+          createWindow: (options : any) => {
+            const browserView = new BrowserView(options)
+            this._parent.window.addBrowserView(browserView)
+            return browserView.webContents
+          }
+        };
+      } else {
+        // otherwise open in system browser
         shell.openExternal(url);
         return { action: 'deny' };
+      }
     });
+    // TODO:
+    // 1. Opening jupyter notebook creates a window that is not decorated like main labview.
+    //    This is the same behaviour as the main branch.
+    // 2. Opening links in jupyter windows opened from jupyter labs has old behaviour
+    // 3. Opening jupyter lab from jupyter notebook creates an undecorated window.
 
     this._view.setBackgroundColor(
       options.isDarkTheme ? DarkThemeBGColor : LightThemeBGColor
